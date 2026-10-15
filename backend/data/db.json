@@ -1,0 +1,11 @@
+{
+  "cuentas": [
+    {
+      "id": "demo-account",
+      "nombre": "Usuario Demo"
+    }
+  ],
+  "habitos": [],
+  "programaciones": [],
+  "realizaciones": []
+}

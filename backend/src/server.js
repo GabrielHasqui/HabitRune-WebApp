@@ -3,31 +3,30 @@ import { pathToFileURL } from 'node:url';
 import cors from 'cors';
 import express from 'express';
 import { PORT } from './config.js';
+import { readDatabase, updateDatabase } from './store.js';
 import { validateHabit } from './validation.js';
 
-const memoryDatabase = {
-  cuentas: [{ id: 'demo-account', nombre: 'Usuario Demo' }],
-  habitos: [],
-  programaciones: [],
-  realizaciones: [],
-};
+async function requireSession(request, response, next) {
+  try {
+    const accountId = request.get('x-account-id');
+    const database = await readDatabase();
+    const accountExists = database.cuentas.some((account) => account.id === accountId);
 
-function requireSession(request, response, next) {
-  const accountId = request.get('x-account-id');
-  const accountExists = memoryDatabase.cuentas.some((account) => account.id === accountId);
+    if (!accountExists) {
+      return response.status(401).json({ mensaje: 'La sesión no es válida' });
+    }
 
-  if (!accountExists) {
-    return response.status(401).json({ mensaje: 'La sesión no es válida' });
+    request.accountId = accountId;
+    return next();
+  } catch (error) {
+    return next(error);
   }
-
-  request.accountId = accountId;
-  return next();
 }
 
-function recordWithSchedule(habit) {
+function recordWithSchedule(database, habit) {
   return {
     ...habit,
-    programacion: memoryDatabase.programaciones.find(
+    programacion: database.programaciones.find(
       (schedule) => schedule.habitId === habit.id,
     ),
   };
@@ -43,15 +42,20 @@ export function createApp() {
     response.json({ estado: 'ok', servicio: 'HabitRune API' });
   });
 
-  app.get('/registros', requireSession, (request, response) => {
-    const records = memoryDatabase.habitos
-      .filter((habit) => habit.cuentaId === request.accountId)
-      .map(recordWithSchedule);
+  app.get('/registros', requireSession, async (request, response, next) => {
+    try {
+      const database = await readDatabase();
+      const records = database.habitos
+        .filter((habit) => habit.cuentaId === request.accountId)
+        .map((habit) => recordWithSchedule(database, habit));
 
-    response.status(200).json({ registros: records });
+      response.status(200).json({ registros: records });
+    } catch (error) {
+      next(error);
+    }
   });
 
-  app.post('/registros', requireSession, (request, response) => {
+  app.post('/registros', requireSession, async (request, response, next) => {
     const { errors, value } = validateHabit(request.body);
 
     if (Object.keys(errors).length) {
@@ -61,32 +65,46 @@ export function createApp() {
       });
     }
 
-    const now = new Date().toISOString();
-    const habit = {
-      id: randomUUID(),
-      cuentaId: request.accountId,
-      nombre: value.nombre,
-      descripcion: value.descripcion,
-      categoria: value.categoria,
-      fechaInicio: value.fechaInicio,
-      creadoEn: now,
-    };
-    const schedule = {
-      id: randomUUID(),
-      habitId: habit.id,
-      vigenteDesde: value.fechaInicio,
-      dias: value.dias,
-      horaInicio: value.horaInicio,
-      horaFin: value.horaFin,
-      creadoEn: new Date().toISOString(),
-    };
+    try {
+      const record = await updateDatabase((database) => {
+        const now = new Date().toISOString();
+        const habit = {
+          id: randomUUID(),
+          cuentaId: request.accountId,
+          nombre: value.nombre,
+          descripcion: value.descripcion,
+          categoria: value.categoria,
+          fechaInicio: value.fechaInicio,
+          creadoEn: now,
+        };
+        const schedule = {
+          id: randomUUID(),
+          habitId: habit.id,
+          vigenteDesde: value.fechaInicio,
+          dias: value.dias,
+          horaInicio: value.horaInicio,
+          horaFin: value.horaFin,
+          creadoEn: now,
+        };
 
-    memoryDatabase.habitos.push(habit);
-    memoryDatabase.programaciones.push(schedule);
+        database.habitos.push(habit);
+        database.programaciones.push(schedule);
+        return { ...habit, programacion: schedule };
+      });
 
-    return response.status(201).json({
-      mensaje: 'Hábito creado correctamente',
-      registro: { ...habit, programacion: schedule },
+      return response.status(201).json({
+        mensaje: 'Hábito creado correctamente',
+        registro: record,
+      });
+    } catch (error) {
+      return next(error);
+    }
+  });
+
+  app.use((error, _request, response, _next) => {
+    console.error(error);
+    response.status(500).json({
+      mensaje: 'No se pudo completar la operación',
     });
   });
 
