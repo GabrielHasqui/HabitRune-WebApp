@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import EmptyState from '../components/EmptyState.jsx';
 import HabitCard from '../components/HabitCard.jsx';
 import LoadingState from '../components/LoadingState.jsx';
 
@@ -47,7 +48,7 @@ export default function HabitsPage() {
 
       {status === 'loading' && <LoadingState />}
       {status === 'error' && <p>{error}</p>}
-      {status === 'ready' && !records.length && <p>No existen hábitos registrados.</p>}
+      {status === 'ready' && !records.length && <EmptyState />}
       {status === 'ready' && records.length > 0 && (
         <div className="habits-grid">
           {records.map((record) => (
