@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import HabitCard from '../components/HabitCard.jsx';
+import LoadingState from '../components/LoadingState.jsx';
 
 const API_URL = 'http://localhost:4000';
 
@@ -44,7 +45,7 @@ export default function HabitsPage() {
         Consulta las actividades que forman parte de tu rutina diaria.
       </p>
 
-      {status === 'loading' && <p>Consultando hábitos…</p>}
+      {status === 'loading' && <LoadingState />}
       {status === 'error' && <p>{error}</p>}
       {status === 'ready' && !records.length && <p>No existen hábitos registrados.</p>}
       {status === 'ready' && records.length > 0 && (
