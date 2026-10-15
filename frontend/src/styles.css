@@ -156,25 +156,77 @@ main {
   line-height: 1.7;
 }
 
-.habits-list {
+.habits-grid {
   display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 14px;
-  margin: 32px 0 0;
-  padding: 0;
-  list-style: none;
+  margin-top: 32px;
 }
 
-.habits-list li {
+.habit-card {
   display: grid;
-  gap: 6px;
-  padding: 18px;
+  gap: 16px;
+  padding: 22px;
   border: 1px solid #3d315c;
-  border-radius: 12px;
+  border-radius: 16px;
   background: rgb(24 17 45 / 80%);
 }
 
-.habits-list span {
+.habit-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.habit-card h2 {
+  margin: 5px 0 0;
+  font-size: 1.35rem;
+}
+
+.habit-card p {
+  margin: 0;
   color: #aaa2bd;
+  line-height: 1.6;
+}
+
+.habit-category {
+  color: #bca6f6;
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.habit-date {
+  color: #8f87a4;
+  font-size: 0.82rem;
+  white-space: nowrap;
+}
+
+.habit-schedule {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0;
+}
+
+.habit-schedule div {
+  padding: 11px;
+  border-radius: 9px;
+  background: #151025;
+}
+
+.habit-schedule dt {
+  color: #8f87a4;
+  font-size: 0.76rem;
+}
+
+.habit-schedule dd {
+  margin: 4px 0 0;
+  color: #eee9fa;
+  font-size: 0.92rem;
+  font-weight: 700;
 }
 
 .habit-form {

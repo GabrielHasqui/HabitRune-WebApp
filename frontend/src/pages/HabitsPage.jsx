@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import HabitCard from '../components/HabitCard.jsx';
 
 const API_URL = 'http://localhost:4000';
 
@@ -47,14 +48,11 @@ export default function HabitsPage() {
       {status === 'error' && <p>{error}</p>}
       {status === 'ready' && !records.length && <p>No existen hábitos registrados.</p>}
       {status === 'ready' && records.length > 0 && (
-        <ul className="habits-list">
+        <div className="habits-grid">
           {records.map((record) => (
-            <li key={record.id}>
-              <strong>{record.nombre}</strong>
-              <span>{record.descripcion}</span>
-            </li>
+            <HabitCard key={record.id} habit={record} />
           ))}
-        </ul>
+        </div>
       )}
     </section>
   );
