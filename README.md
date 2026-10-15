@@ -1,6 +1,6 @@
 # HabitRune
 
-HabitRune es una aplicación web para registrar y consultar hábitos diarios. Su objetivo es facilitar la organización de rutinas mediante un formulario validado, una API REST y almacenamiento persistente en un archivo JSON.
+HabitRune es una aplicación web para crear, organizar y completar hábitos diarios. Incluye autenticación, rutas privadas, resumen del día, historial, edición y almacenamiento persistente en JSON.
 
 ## Tecnologías
 
@@ -19,16 +19,17 @@ HabitRune/
 │   └── test/              # Pruebas funcionales
 ├── frontend/
 │   └── src/
-│       ├── components/    # Formulario, tarjetas y estados visuales
-│       ├── pages/         # Inicio, registro y listado
+│       ├── components/    # Formularios, tarjetas, diálogos y estados
+│       ├── context/       # Sesión y autenticación
+│       ├── pages/         # Login, inicio, hábitos, detalle y cuenta
 │       └── services/      # Peticiones HTTP centralizadas
 ├── package.json
 └── README.md
 ```
 
-## Requisitos e instalación
+## Instalación
 
-Se requiere Node.js 20 o una versión posterior. Desde la raíz del proyecto se instalan todas las dependencias con:
+Desde la raíz del proyecto se instalan todas las dependencias con:
 
 ```bash
 npm run install:all
@@ -51,39 +52,36 @@ npm run dev --prefix backend
 npm run dev --prefix frontend
 ```
 
-Durante el desarrollo, Vite redirige las solicitudes de `/api` hacia el backend. Para utilizar otra dirección se puede definir `VITE_API_URL` antes de iniciar o compilar el frontend.
+Durante el desarrollo, Vite redirige las solicitudes de `/api` hacia el backend.
 
-## API de registros
+## Acceso de demostración
 
-Las rutas protegidas requieren el encabezado de demostración:
+La aplicación permite crear cuentas nuevas. También incluye una cuenta preparada para la demostración:
 
 ```text
-x-account-id: demo-account
+Correo: demo@habitrune.app
+Contraseña: Habit123
 ```
+
+## API
+
+El frontend conserva el token de sesión en el navegador y lo envía como `Authorization: Bearer <token>` en las rutas protegidas.
 
 - `GET /salud`: comprueba que el servicio esté activo.
-- `GET /registros`: devuelve los hábitos de la cuenta.
-- `POST /registros`: valida y guarda un hábito.
+- `POST /auth/register` y `POST /auth/login`: crean una cuenta o inician sesión.
+- `GET /auth/session` y `DELETE /auth/session`: consultan o cierran la sesión.
+- `GET /registros` y `POST /registros`: consultan o crean hábitos.
+- `GET`, `PUT` y `DELETE /registros/:id`: muestran, editan o eliminan un hábito.
+- `POST /registros/:id/realizaciones`: marca el hábito como realizado hoy.
+- `GET /registros/:id/historial`: devuelve su historial diario.
+- `GET /resumen-hoy`: genera el resumen de la pantalla principal.
+- `GET /cuenta`: devuelve el perfil, totales e historial filtrable.
 
-Ejemplo del cuerpo para crear un registro:
-
-```json
-{
-  "nombre": "Lectura técnica",
-  "descripcion": "Leer documentación durante treinta minutos",
-  "categoria": "Estudio",
-  "fechaInicio": "2026-10-14",
-  "dias": [1, 3, 5],
-  "horaInicio": "18:00",
-  "horaFin": "18:30"
-}
-```
-
-Una creación correcta responde con estado `201`. Los datos inválidos responden con `400` y errores por campo; una cuenta desconocida responde con `401`. Los registros se conservan en `backend/data/db.json`, incluso después de reiniciar el servidor.
+Los datos inválidos responden con `400` y errores por campo; una sesión desconocida responde con `401`. Las cuentas, hábitos, programaciones y realizaciones se conservan en `backend/data/db.json` después de reiniciar el servidor.
 
 ## Verificación
 
-Para ejecutar las pruebas de validación, creación, consulta y persistencia:
+Para ejecutar las pruebas de autenticación, validación, creación, consulta, realización y persistencia:
 
 ```bash
 npm test
