@@ -1,44 +1,34 @@
-const API_URL = (import.meta.env.VITE_API_URL || '/api').replace(/\/$/, '');
-const DEMO_ACCOUNT_ID = 'demo-account';
+const TOKEN_KEY = "habitrune:token";
 
+export function getToken() {
+  return localStorage.getItem(TOKEN_KEY);
+}
+export function saveToken(token) {
+  localStorage.setItem(TOKEN_KEY, token);
+}
+export function clearToken() {
+  localStorage.removeItem(TOKEN_KEY);
+}
 export async function api(path, options = {}) {
-  let response;
+  const token = getToken();
+  const response = await fetch(`/api${path}`, {
+    ...options,
+    headers: {
+      ...(options.body ? { "Content-Type": "application/json" } : {}),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...options.headers,
+    },
+  });
 
-  try {
-    response = await fetch(`${API_URL}${path}`, {
-      ...options,
-      headers: {
-        'x-account-id': DEMO_ACCOUNT_ID,
-        ...(options.body ? { 'Content-Type': 'application/json' } : {}),
-        ...options.headers,
-      },
-    });
-  } catch (error) {
-    if (error.name === 'AbortError') throw error;
-    throw new Error('No fue posible conectar con la API de HabitRune.');
-  }
-
-  const data = await response.json().catch(() => ({
-    mensaje: 'La API devolvió una respuesta que no se pudo interpretar.',
-  }));
+  if (response.status === 204) return null;
+  const data = await response.json().catch(() => ({ mensaje: "Respuesta inválida del servidor" }));
 
   if (!response.ok) {
-    const requestError = new Error(data.mensaje || 'No se pudo completar la solicitud.');
-    requestError.status = response.status;
-    requestError.fields = data.errores || {};
-    throw requestError;
+    const error = new Error(data.mensaje || "No se pudo completar la operación");
+    error.status = response.status;
+    error.fields = data.errores || {};
+    throw error;
   }
 
   return data;
-}
-
-export function getHabits(options = {}) {
-  return api('/registros', options);
-}
-
-export function createHabit(values) {
-  return api('/registros', {
-    method: 'POST',
-    body: JSON.stringify(values),
-  });
 }
