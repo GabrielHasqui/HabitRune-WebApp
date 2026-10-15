@@ -2,7 +2,10 @@
   "cuentas": [
     {
       "id": "demo-account",
-      "nombre": "Usuario Demo"
+      "nombre": "Usuario Demo",
+      "email": "demo@habitrune.app",
+      "passwordHash": "2c1c850e283f0e9deafa8678e7213776b3932e46ec2749917ed4aa6ce68408bd",
+      "creadoEn": "2026-10-14T00:00:00.000Z"
     }
   ],
   "habitos": [],

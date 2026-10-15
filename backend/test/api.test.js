@@ -1,111 +1,97 @@
-import assert from 'node:assert/strict';
-import { once } from 'node:events';
-import { mkdtemp, rm, writeFile } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
-import path from 'node:path';
-import test from 'node:test';
+import assert from "node:assert/strict";
+import { mkdtemp, readFile, rm } from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
+import test from "node:test";
 
-const testDirectory = await mkdtemp(path.join(tmpdir(), 'habitrune-api-'));
-const dataFile = path.join(testDirectory, 'db.json');
-process.env.DATA_FILE = dataFile;
+const temporaryDirectory = await mkdtemp(path.join(os.tmpdir(), "habitrune-test-"));
+process.env.DATA_FILE = path.join(temporaryDirectory, "db.json");
+process.env.APP_TIME_ZONE = "America/Guayaquil";
 
-const { createApp } = await import('../src/server.js');
+const { app } = await import("../src/server.js");
+const { ensureDemoAccount } = await import("../src/store.js");
+const { todayKey } = await import("../src/date.js");
 
-const initialDatabase = {
-  cuentas: [{ id: 'demo-account', nombre: 'Usuario Demo' }],
-  habitos: [],
-  programaciones: [],
-  realizaciones: [],
-};
+await ensureDemoAccount();
+const server = app.listen(0);
+await new Promise((resolve) => server.once("listening", resolve));
+const baseUrl = `http://127.0.0.1:${server.address().port}`;
 
-async function resetDatabase() {
-  await writeFile(dataFile, `${JSON.stringify(initialDatabase, null, 2)}\n`, 'utf8');
+async function request(route, options = {}) {
+  const response = await fetch(`${baseUrl}${route}`, options);
+  const data = response.status === 204 ? null : await response.json();
+  return { response, data };
 }
 
-async function withServer(callback) {
-  const server = createApp().listen(0, '127.0.0.1');
-  await once(server, 'listening');
-  const address = server.address();
+let token;
+let habitId;
 
-  try {
-    return await callback(`http://127.0.0.1:${address.port}`);
-  } finally {
-    await new Promise((resolve, reject) => {
-      server.close((error) => (error ? reject(error) : resolve()));
-    });
-  }
-}
+test("la API responde y permite iniciar sesión", async () => {
+  const health = await request("/salud");
+  assert.equal(health.response.status, 200);
 
-function requestOptions(body) {
-  return {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-account-id': 'demo-account',
-    },
-    body: JSON.stringify(body),
-  };
-}
-
-test('la API valida, registra, consulta y conserva los hábitos', async (context) => {
-  await resetDatabase();
-
-  await context.test('rechaza sesiones y datos inválidos', async () => {
-    await withServer(async (baseUrl) => {
-      const unauthorizedResponse = await fetch(`${baseUrl}/registros`);
-      assert.equal(unauthorizedResponse.status, 401);
-
-      const invalidResponse = await fetch(
-        `${baseUrl}/registros`,
-        requestOptions({ nombre: 'x' }),
-      );
-      const invalidData = await invalidResponse.json();
-
-      assert.equal(invalidResponse.status, 400);
-      assert.equal(invalidData.mensaje, 'Revisa los datos enviados');
-      assert.ok(invalidData.errores.nombre);
-      assert.ok(invalidData.errores.dias);
-    });
+  const login = await request("/auth/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email: "demo@habitrune.app", password: "Habit123" }),
   });
-
-  let recordId;
-
-  await context.test('registra un hábito válido con identificadores únicos', async () => {
-    await withServer(async (baseUrl) => {
-      const response = await fetch(`${baseUrl}/registros`, requestOptions({
-        nombre: 'Lectura técnica',
-        descripcion: 'Leer documentación durante treinta minutos',
-        categoria: 'Estudio',
-        fechaInicio: '2026-10-14',
-        dias: [1, 3, 5],
-        horaInicio: '18:00',
-        horaFin: '18:30',
-      }));
-      const data = await response.json();
-
-      assert.equal(response.status, 201);
-      assert.equal(data.mensaje, 'Hábito creado correctamente');
-      assert.match(data.registro.id, /^[0-9a-f-]{36}$/i);
-      assert.match(data.registro.programacion.id, /^[0-9a-f-]{36}$/i);
-      recordId = data.registro.id;
-    });
-  });
-
-  await context.test('mantiene el registro después de reiniciar el servidor', async () => {
-    await withServer(async (baseUrl) => {
-      const response = await fetch(`${baseUrl}/registros`, {
-        headers: { 'x-account-id': 'demo-account' },
-      });
-      const data = await response.json();
-
-      assert.equal(response.status, 200);
-      assert.equal(data.registros.length, 1);
-      assert.equal(data.registros[0].id, recordId);
-      assert.deepEqual(data.registros[0].programacion.dias, [1, 3, 5]);
-    });
-  });
+  assert.equal(login.response.status, 200);
+  assert.equal(login.data.cuenta.nombre, "Usuario Demo");
+  token = login.data.token;
 });
+test("rechaza registros inválidos en el servidor", async () => {
+  const result = await request("/registros", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ descripcion: "x", fechaInicio: "", categoria: "", dias: [] }),
+  });
+  assert.equal(result.response.status, 400);
+  assert.ok(result.data.errores.nombre);
+  assert.ok(result.data.errores.descripcion);
+  assert.ok(result.data.errores.dias);
+  assert.ok(result.data.errores.horaInicio);
+  assert.ok(result.data.errores.horaFin);
+});
+test("crea, consulta y persiste un hábito", async () => {
+  const created = await request("/registros", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify({
+      nombre: "Lectura diaria",
+      descripcion: "Leer documentación durante veinte minutos",
+      fechaInicio: todayKey(),
+      categoria: "Estudio",
+      dias: [1, 2, 3, 4, 5, 6, 7],
+      horaInicio: "19:00",
+      horaFin: "19:20",
+    }),
+  });
+  assert.equal(created.response.status, 201);
+  habitId = created.data.registro.id;
 
+  const list = await request("/registros", { headers: { Authorization: `Bearer ${token}` } });
+  assert.equal(list.response.status, 200);
+  assert.equal(list.data.registros.length, 1);
+
+  const stored = JSON.parse(await readFile(process.env.DATA_FILE, "utf8"));
+  assert.equal(stored.habitos.length, 1);
+  assert.equal(stored.habitos[0].nombre, "Lectura diaria");
+  assert.equal(stored.programaciones.length, 1);
+});
+test("Realizado hoy es idempotente y actualiza el resumen", async () => {
+  const headers = { Authorization: `Bearer ${token}` };
+  const first = await request(`/registros/${habitId}/realizaciones`, { method: "POST", headers });
+  const second = await request(`/registros/${habitId}/realizaciones`, { method: "POST", headers });
+  assert.equal(first.response.status, 201);
+  assert.equal(second.response.status, 201);
+  assert.equal(first.data.realizacion.id, second.data.realizacion.id);
+
+  const summary = await request("/resumen-hoy", { headers });
+  assert.equal(summary.data.total, 1);
+  assert.equal(summary.data.realizados, 1);
+  assert.equal(summary.data.pendientes, 0);
+});
 test.after(async () => {
-  await rm(testDirectory, { recursive: true, force: true });
+  await new Promise((resolve) => server.close(resolve));
+  await rm(temporaryDirectory, { recursive: true, force: true });
 });
