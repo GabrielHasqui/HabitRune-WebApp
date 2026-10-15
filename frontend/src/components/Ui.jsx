@@ -11,7 +11,6 @@ export function PageHeader({ title, description, action }) {
     </header>
   );
 }
-
 export function Message({ type = "error", children }) {
   const Icon = type === "success" ? CheckCircle2 : AlertCircle;
   return (
@@ -21,7 +20,6 @@ export function Message({ type = "error", children }) {
     </div>
   );
 }
-
 export function Loading({ text = "Cargando…" }) {
   return (
     <div className="loading-state" role="status">
@@ -30,7 +28,6 @@ export function Loading({ text = "Cargando…" }) {
     </div>
   );
 }
-
 export function EmptyState({ icon, title, description, action }) {
   return (
     <section className="empty-state">
@@ -41,9 +38,7 @@ export function EmptyState({ icon, title, description, action }) {
     </section>
   );
 }
-
 export function FieldError({ id, children }) {
   if (!children) return null;
   return <p id={id} className="field-error" role="alert">{children}</p>;
 }
-
