@@ -30,4 +30,3 @@ export default function ConfirmDialog({ habit, busy, error, onCancel, onConfirm 
     </div>
   );
 }
-
