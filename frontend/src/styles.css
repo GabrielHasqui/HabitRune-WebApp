@@ -178,6 +178,13 @@ main {
   padding: 12px 14px;
 }
 
+.form-field input[aria-invalid='true'],
+.form-field select[aria-invalid='true'],
+.form-field textarea[aria-invalid='true'] {
+  border-color: #e28491;
+  box-shadow: 0 0 0 2px rgb(226 132 145 / 12%);
+}
+
 .form-field textarea {
   resize: vertical;
 }
@@ -236,6 +243,18 @@ main {
   background: rgb(39 95 65 / 32%);
   color: #bff4d2 !important;
   font-size: 0.96rem !important;
+}
+
+.form-message-error {
+  border-color: #aa5968;
+  background: rgb(116 37 52 / 28%);
+  color: #ffc7cf !important;
+}
+
+.field-error {
+  color: #ffabb7;
+  font-size: 0.84rem;
+  font-weight: 600;
 }
 
 @media (max-width: 680px) {
