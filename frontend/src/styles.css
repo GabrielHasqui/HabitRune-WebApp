@@ -310,6 +310,36 @@ main {
   line-height: 1.6;
 }
 
+.error-state {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  margin-top: 32px;
+  padding: 22px;
+  border: 1px solid #8c4554;
+  border-radius: 14px;
+  background: rgb(104 32 46 / 24%);
+}
+
+.error-state strong {
+  color: #ffd6dc;
+}
+
+.error-state p {
+  margin: 6px 0 0;
+  color: #d7aab1;
+  line-height: 1.5;
+}
+
+.error-retry {
+  flex: 0 0 auto;
+  border-color: #b76777;
+  background: transparent;
+  color: #ffe9ec;
+  cursor: pointer;
+}
+
 .habit-form {
   display: grid;
   gap: 24px;
@@ -443,5 +473,10 @@ main {
   .site-footer {
     flex-direction: column;
     gap: 8px;
+  }
+
+  .error-state {
+    align-items: flex-start;
+    flex-direction: column;
   }
 }

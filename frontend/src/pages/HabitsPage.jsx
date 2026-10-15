@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import EmptyState from '../components/EmptyState.jsx';
+import ErrorState from '../components/ErrorState.jsx';
 import HabitCard from '../components/HabitCard.jsx';
 import LoadingState from '../components/LoadingState.jsx';
 
@@ -9,11 +10,15 @@ export default function HabitsPage() {
   const [records, setRecords] = useState([]);
   const [status, setStatus] = useState('loading');
   const [error, setError] = useState('');
+  const [requestKey, setRequestKey] = useState(0);
 
   useEffect(() => {
     const controller = new AbortController();
 
     async function loadRecords() {
+      setStatus('loading');
+      setError('');
+
       try {
         const response = await fetch(`${API_URL}/registros`, {
           headers: { 'x-account-id': 'demo-account' },
@@ -29,14 +34,22 @@ export default function HabitsPage() {
         setStatus('ready');
       } catch (requestError) {
         if (requestError.name === 'AbortError') return;
-        setError(requestError.message);
+        setError(
+          requestError instanceof TypeError
+            ? 'No fue posible conectar con la API. Comprueba que el backend esté iniciado.'
+            : requestError.message,
+        );
         setStatus('error');
       }
     }
 
     loadRecords();
     return () => controller.abort();
-  }, []);
+  }, [requestKey]);
+
+  function retry() {
+    setRequestKey((current) => current + 1);
+  }
 
   return (
     <section className="habits-page">
@@ -47,7 +60,7 @@ export default function HabitsPage() {
       </p>
 
       {status === 'loading' && <LoadingState />}
-      {status === 'error' && <p>{error}</p>}
+      {status === 'error' && <ErrorState message={error} onRetry={retry} />}
       {status === 'ready' && !records.length && <EmptyState />}
       {status === 'ready' && records.length > 0 && (
         <div className="habits-grid">
