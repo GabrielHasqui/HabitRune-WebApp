@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import EmptyState from '../components/EmptyState.jsx';
 import ErrorState from '../components/ErrorState.jsx';
 import HabitCard from '../components/HabitCard.jsx';
 import LoadingState from '../components/LoadingState.jsx';
-
-const API_URL = 'http://localhost:4000';
+import { getHabits } from '../services/api.js';
 
 export default function HabitsPage() {
+  const location = useLocation();
   const [records, setRecords] = useState([]);
   const [status, setStatus] = useState('loading');
   const [error, setError] = useState('');
@@ -20,25 +21,12 @@ export default function HabitsPage() {
       setError('');
 
       try {
-        const response = await fetch(`${API_URL}/registros`, {
-          headers: { 'x-account-id': 'demo-account' },
-          signal: controller.signal,
-        });
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(data.mensaje || 'No se pudieron consultar los hábitos.');
-        }
-
+        const data = await getHabits({ signal: controller.signal });
         setRecords(data.registros);
         setStatus('ready');
       } catch (requestError) {
         if (requestError.name === 'AbortError') return;
-        setError(
-          requestError instanceof TypeError
-            ? 'No fue posible conectar con la API. Comprueba que el backend esté iniciado.'
-            : requestError.message,
-        );
+        setError(requestError.message);
         setStatus('error');
       }
     }
@@ -58,6 +46,9 @@ export default function HabitsPage() {
       <p>
         Consulta las actividades que forman parte de tu rutina diaria.
       </p>
+      {location.state?.message && (
+        <p className="page-notice" role="status">{location.state.message}</p>
+      )}
 
       {status === 'loading' && <LoadingState />}
       {status === 'error' && <ErrorState message={error} onRetry={retry} />}

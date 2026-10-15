@@ -45,10 +45,11 @@ function FieldError({ children }) {
   return <small className="field-error">{children}</small>;
 }
 
-export default function HabitForm() {
+export default function HabitForm({ onSubmit }) {
   const [form, setForm] = useState(emptyForm);
   const [errors, setErrors] = useState({});
   const [message, setMessage] = useState('');
+  const [messageKind, setMessageKind] = useState('success');
   const [saving, setSaving] = useState(false);
 
   function updateField(event) {
@@ -109,23 +110,35 @@ export default function HabitForm() {
     event.preventDefault();
     setMessage('');
     if (!validate()) {
+      setMessageKind('error');
       setMessage('Revisa los campos señalados antes de continuar.');
       return;
     }
 
     setSaving(true);
+    setMessageKind('success');
 
-    await Promise.resolve();
-
-    setMessage('Formulario validado correctamente y listo para enviarse.');
-    setSaving(false);
+    try {
+      const result = await onSubmit({
+        ...form,
+        nombre: form.nombre.trim(),
+        descripcion: form.descripcion.trim(),
+      });
+      setMessage(result?.mensaje || 'Hábito guardado correctamente.');
+    } catch (requestError) {
+      setErrors(requestError.fields || {});
+      setMessageKind('error');
+      setMessage(requestError.message);
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
     <form className="habit-form" onSubmit={submit} noValidate>
       {message && (
         <p
-          className={Object.keys(errors).length ? 'form-message form-message-error' : 'form-message'}
+          className={messageKind === 'error' ? 'form-message form-message-error' : 'form-message'}
           role="status"
         >
           {message}
@@ -239,7 +252,7 @@ export default function HabitForm() {
       </div>
 
       <button className="button button-primary submit-button" type="submit" disabled={saving}>
-        {saving ? 'Preparando…' : 'Guardar hábito'}
+        {saving ? 'Guardando…' : 'Guardar hábito'}
       </button>
     </form>
   );

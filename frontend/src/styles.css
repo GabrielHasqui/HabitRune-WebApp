@@ -156,6 +156,15 @@ main {
   line-height: 1.7;
 }
 
+.habits-page > .page-notice {
+  margin-top: 24px;
+  padding: 12px 14px;
+  border: 1px solid #5d9b7b;
+  border-radius: 10px;
+  background: rgb(39 95 65 / 32%);
+  color: #bff4d2;
+}
+
 .habits-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
