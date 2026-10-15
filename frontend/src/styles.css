@@ -146,6 +146,98 @@ main {
   background: rgb(24 17 45 / 80%);
 }
 
+.habit-form {
+  display: grid;
+  gap: 24px;
+  margin-top: 32px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.form-field {
+  display: grid;
+  gap: 8px;
+  color: #e9e4f7;
+  font-weight: 700;
+}
+
+.form-field input,
+.form-field select,
+.form-field textarea {
+  width: 100%;
+  border: 1px solid #4b3c6c;
+  border-radius: 10px;
+  background: #171129;
+  color: #f4f2ff;
+  font: inherit;
+  font-weight: 400;
+  padding: 12px 14px;
+}
+
+.form-field textarea {
+  resize: vertical;
+}
+
+.days-field {
+  margin: 0;
+  padding: 18px;
+  border: 1px solid #4b3c6c;
+  border-radius: 12px;
+}
+
+.days-field legend {
+  padding: 0 8px;
+  color: #e9e4f7;
+  font-weight: 700;
+}
+
+.day-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+
+.day-button {
+  min-width: 54px;
+  padding: 9px 12px;
+  border: 1px solid #554474;
+  border-radius: 9px;
+  background: #171129;
+  color: #c9c2dc;
+  cursor: pointer;
+}
+
+.day-button-selected {
+  border-color: #a98cf5;
+  background: #5e419f;
+  color: white;
+}
+
+.submit-button {
+  justify-self: start;
+  color: white;
+  cursor: pointer;
+}
+
+.submit-button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.form-message {
+  margin: 0;
+  padding: 12px 14px;
+  border: 1px solid #5d9b7b;
+  border-radius: 10px;
+  background: rgb(39 95 65 / 32%);
+  color: #bff4d2 !important;
+  font-size: 0.96rem !important;
+}
+
 @media (max-width: 680px) {
   .site-header,
   nav {
@@ -159,6 +251,10 @@ main {
 
   main {
     padding-top: 42px;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
   }
 
   .site-footer {
